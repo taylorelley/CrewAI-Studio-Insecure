@@ -32,8 +32,23 @@ def disable_ssl_verification(extra_warning: Optional[str] = None) -> None:
 
     ssl._create_default_https_context = ssl._create_unverified_context
 
-    if requests and InsecureRequestWarning:
-        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+    if requests:
+        try:
+            original_init = requests.sessions.Session.__init__
+
+            def insecure_init(self, *args, **kwargs):  # type: ignore[override]
+                original_init(self, *args, **kwargs)
+                # Ensure all sessions skip certificate verification by default
+                self.verify = False
+
+            requests.sessions.Session.__init__ = insecure_init  # type: ignore[assignment]
+        except Exception:
+            # If monkeypatching fails, fall back to setting the module-level default
+            # which still covers top-level helpers like requests.get
+            requests.sessions.Session.verify = False  # type: ignore[assignment]
+
+        if InsecureRequestWarning:
+            requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
     if extra_warning:
         print(extra_warning)
