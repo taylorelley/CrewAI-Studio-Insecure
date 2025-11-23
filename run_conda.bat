@@ -15,6 +15,12 @@ call conda activate crewai_env || (
     exit /b 1
 )
 
+:: Disable TLS/SSL verification for runtime
+set PYTHONHTTPSVERIFY=0
+set REQUESTS_CA_BUNDLE=
+set CURL_CA_BUNDLE=
+set SSL_CERT_FILE=
+
 cd %SCRIPT_DIR%
 
 :: Run the Streamlit application

@@ -13,8 +13,14 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+echo Disabling TLS/SSL verification in virtual environment...
+set PYTHONHTTPSVERIFY=0
+set REQUESTS_CA_BUNDLE=
+set CURL_CA_BUNDLE=
+set SSL_CERT_FILE=
+
 echo Installing requirements...
-pip install -r requirements.txt --no-cache
+pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt --no-cache
 if %errorlevel% neq 0 (
     echo Failed to install requirements
     exit /b %errorlevel%
@@ -22,7 +28,7 @@ if %errorlevel% neq 0 (
 set /p install_agentops="Do you want to install agentops? (y/n): "
 if /i "%install_agentops%"=="y" (
     echo Installing agentops...
-    pip install agentops
+    pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org agentops
     if %errorlevel% neq 0 (
         echo Failed to install agentops
         exit /b %errorlevel%

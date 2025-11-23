@@ -9,7 +9,7 @@ set CONDA_PATH=%SCRIPT_DIR%miniconda
 :: Check if Miniconda is already installed
 if not exist "%CONDA_PATH%" (
     echo Miniconda is not installed. Downloading and installing Miniconda...
-    curl -o miniconda.exe https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
+    curl -k -o miniconda.exe https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe
 
     echo Installing Miniconda...
     start /wait "" miniconda.exe /InstallationType=JustMe /RegisterPython=0 /S /D=%CONDA_PATH%
@@ -33,15 +33,21 @@ if %errorlevel% equ 0 (
 :: Create a new environment
 call conda create -n crewai_env python=3.11 -y
 
+:: Disable TLS/SSL verification for the Conda environment
+set PYTHONHTTPSVERIFY=0
+set REQUESTS_CA_BUNDLE=
+set CURL_CA_BUNDLE=
+set SSL_CERT_FILE=
+
 :: Ensure the environment is activated and install the necessary packages
 call conda run -n crewai_env conda install -y packaging
-call conda run -n crewai_env pip install -r requirements.txt
+call conda run -n crewai_env pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 :: Install agentops if requested
 set /p install_agentops="Do you want to install agentops? (y/n): "
 if /i "%install_agentops%"=="y" (
     echo Installing agentops...
-    call conda run -n crewai_env pip install agentops
+    call conda run -n crewai_env pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org agentops
 )
 :: Check if .env file exists, if not copy .env_example to .env
 if not exist "%SCRIPT_DIR%.env" (
