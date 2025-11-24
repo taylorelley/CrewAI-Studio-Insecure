@@ -1,5 +1,5 @@
 crewai==0.30.11
-crewai-tools==0.76.0
+crewai-tools==0.65.0
 # Pin LangChain packages to specific 0.1-series releases because embedchain depends on
 # modules (e.g., langchain.docstore.document) that were removed in later releases.
 langchain==0.1.17
