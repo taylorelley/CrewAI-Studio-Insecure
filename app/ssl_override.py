@@ -7,7 +7,6 @@ inspection or present untrusted certificates.
 
 import os
 import ssl
-from typing import Optional
 
 try:  # pragma: no cover - safeguard for missing optional deps
     import requests
@@ -17,7 +16,7 @@ except ImportError:  # pragma: no cover
     InsecureRequestWarning = None  # type: ignore
 
 
-def disable_ssl_verification(extra_warning: Optional[str] = None) -> None:
+def disable_ssl_verification() -> None:
     """Disable certificate verification globally for HTTPS clients.
 
     This applies to the standard library's TLS context, common environment
@@ -50,5 +49,3 @@ def disable_ssl_verification(extra_warning: Optional[str] = None) -> None:
         if InsecureRequestWarning:
             requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-    if extra_warning:
-        print(extra_warning)
