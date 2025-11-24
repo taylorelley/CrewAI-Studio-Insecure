@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any, ClassVar, Type
+from typing import Optional, Dict, Any, Type
 
 import requests
 from crewai.tools import BaseTool
@@ -15,7 +15,7 @@ class CustomApiToolInputSchema(BaseModel):
 class CustomApiTool(BaseTool):
     name: str = "Call Api"
     description: str = "Tool to make API calls with customizable parameters"
-    args_schema: ClassVar[Type[BaseModel]] = CustomApiToolInputSchema
+    args_schema: Type[BaseModel] = CustomApiToolInputSchema
     base_url: Optional[str] = None
     default_headers: Optional[Dict[str, str]] = None
     default_query_params: Optional[Dict[str, Any]] = None
