@@ -1,13 +1,13 @@
-crewai
-crewai-tools
-# Pin LangChain packages to the 0.1 series because embedchain depends on modules
-# (e.g., langchain.docstore.document) that were removed in later releases.
-langchain<0.2
-langchain-community<0.2
-langchain-openai<0.2
-langchain-groq<0.2
-langchain-anthropic<0.2
-langchain-ollama<0.2
+crewai==0.30.11
+crewai-tools==0.76.0
+# Pin LangChain packages to specific 0.1-series releases because embedchain depends on
+# modules (e.g., langchain.docstore.document) that were removed in later releases.
+langchain==0.1.17
+langchain-community==0.0.36
+langchain-openai==0.1.13
+langchain-groq==0.1.9
+langchain-anthropic==0.1.19
+langchain-ollama==0.1.1
 streamlit
 python-dotenv
 pdfminer.six
@@ -17,4 +17,4 @@ snowflake-connector-python
 markdown
 docling
 duckduckgo-search>=8.0.2
-embedchain
+embedchain==0.1.111

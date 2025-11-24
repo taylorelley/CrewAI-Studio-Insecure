@@ -20,6 +20,9 @@ Welcome to CrewAI Studio! This edition is tailored for environments with TLS/SSL
 - **Postgres search tool**: The PGSearch tool loads only when your installed
   `crewai-tools` release provides it, preventing import errors in environments
   that ship a build without that optional integration.
+- **Pinned, compatible dependencies**: LangChain, Embedchain, CrewAI, and
+  CrewAI-Tools are pinned to known-good 0.1-era releases so language model and
+  search tools import cleanly without pip resolver backtracking.
 
 ## Support CrewAI Studio
 
