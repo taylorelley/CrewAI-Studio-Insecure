@@ -1,6 +1,6 @@
 # CrewAI Studio
 
-Welcome to CrewAI Studio! This application provides a user-friendly interface written in Streamlit for interacting with CrewAI, suitable even for those who don't want to write any code. Follow the steps below to install and run the application using Docker/docker-compose or Conda/venv.
+Welcome to CrewAI Studio! This edition is tailored for environments with TLS/SSL inspection or self-signed certificates, so it ships with verification disabled by default while still providing a user-friendly Streamlit interface for interacting with CrewAI—great for anyone who doesn't want to write code. Follow the steps below to install and run the application using Docker/docker-compose or Conda/venv.
 
 ## Features
 
