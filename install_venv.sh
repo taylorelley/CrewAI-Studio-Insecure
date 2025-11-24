@@ -33,21 +33,27 @@ python -m venv venv || { echo "Failed to create venv"; exit 1; }
 # Activate the virtual environment
 source venv/bin/activate || { echo "Failed to activate venv"; exit 1; }
 
+# Disable TLS/SSL verification in the virtual environment
+export PYTHONHTTPSVERIFY=0
+export REQUESTS_CA_BUNDLE=""
+export CURL_CA_BUNDLE=""
+export SSL_CERT_FILE=""
+
 # Prompt for cache usage
 USE_CACHE="--no-cache"
 if prompt_yes_no "Do you want to use the cache for pip installation?"; then
     USE_CACHE=""
 fi
 
-# Install requirements
-pip install -r requirements.txt $USE_CACHE || { echo "Failed to install requirements"; exit 1; }
+# Install requirements without certificate validation
+pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt $USE_CACHE || { echo "Failed to install requirements"; exit 1; }
 
 #agentops
 echo "Do you want to install agentops? (y/n)"
 read agentops
 if [ "$agentops" == "y" ]; then
     echo "Installing agentops..."
-    pip install agentops || { echo "Failed to install agentops"; }
+    pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org agentops || { echo "Failed to install agentops"; }
 fi
 # Check if .env file exists, if not copy .env_example to .env
 if [ ! -f "$SCRIPT_DIR/.env" ]; then

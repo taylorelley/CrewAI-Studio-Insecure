@@ -21,7 +21,7 @@ prompt_yes_no() {
 # Check if Miniconda is already installed
 if [ ! -d "$CONDA_PATH" ]; then
     # Download Miniconda installer
-    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+    wget --no-check-certificate https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
 
     # Install Miniconda
     bash miniconda.sh -b -p "$CONDA_PATH"
@@ -54,6 +54,12 @@ fi
 # Create a new environment
 conda create -n crewai python=3.11 -y || { echo "Failed to create Conda environment"; exit 1; }
 
+# Disable TLS/SSL verification for the Conda environment
+export PYTHONHTTPSVERIFY=0
+export REQUESTS_CA_BUNDLE=""
+export CURL_CA_BUNDLE=""
+export SSL_CERT_FILE=""
+
 # Prompt for cache usage
 USE_CACHE="--no-cache"
 if prompt_yes_no "Do you want to use the cache for pip installation?"; then
@@ -62,14 +68,14 @@ fi
 
 # Ensure the environment is activated and install the necessary packages
 conda run -n crewai conda install -y packaging || { echo "Failed to install Conda packages"; exit 1; }
-conda run -n crewai pip install -r requirements.txt $USE_CACHE || { echo "Failed to install requirements"; exit 1; }
+conda run -n crewai pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt $USE_CACHE || { echo "Failed to install requirements"; exit 1; }
 
 # Agentops
 echo "Do you want to install agentops? (y/n)"
 read agentops
 if [ "$agentops" == "y" ]; then
     echo "Installing agentops..."
-    conda run -n crewai pip install agentops || { echo "Failed to install agentops"; }
+    conda run -n crewai pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org agentops || { echo "Failed to install agentops"; }
 fi
 
 # Check if .env file exists, if not copy .env_example to .env

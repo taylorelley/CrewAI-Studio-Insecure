@@ -17,6 +17,12 @@ fi
 # Activate the crewai environment
 conda activate crewai
 
+# Disable TLS/SSL verification for runtime
+export PYTHONHTTPSVERIFY=0
+export REQUESTS_CA_BUNDLE=""
+export CURL_CA_BUNDLE=""
+export SSL_CERT_FILE=""
+
 # Navigate to the script directory
 cd "$SCRIPT_DIR"
 

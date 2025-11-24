@@ -1,6 +1,6 @@
 # CrewAI Studio
 
-Welcome to CrewAI Studio! This application provides a user-friendly interface written in Streamlit for interacting with CrewAI, suitable even for those who don't want to write any code. Follow the steps below to install and run the application using Docker/docker-compose or Conda/venv.
+Welcome to CrewAI Studio! This edition is tailored for environments with TLS/SSL inspection or self-signed certificates, so it ships with verification disabled by default while still providing a user-friendly Streamlit interface for interacting with CrewAI—great for anyone who doesn't want to write code. Follow the steps below to install and run the application using Docker/docker-compose or Conda/venv.
 
 ## Features
 
@@ -14,6 +14,9 @@ Welcome to CrewAI Studio! This application provides a user-friendly interface wr
 - **LLM providers supported**: Currently OpenAI, Groq, Anthropic, ollama, Grok and LM Studio backends are supported. OpenAI key is probably still needed for embeddings in many tools. Don't forget to load an embedding model when using LM Studio.
 - **Single Page app export**: Feature to export crew as simple single page streamlit app.
 - **Threaded crew run**: Crews can run in background and can be stopped.
+- **TLS/SSL inspection ready**: All installation and runtime entrypoints disable
+  certificate verification (including `requests` sessions) so the app keeps
+  working behind SSL-inspecting proxies or with self-signed certs.
 
 ## Support CrewAI Studio
 
@@ -58,6 +61,10 @@ bc1qgsn45g02wran4lph5gsyqtk0k7t98zsg6qur0y
    ./run_venv.sh
    ```
 
+Both the installer and runner export environment variables to keep certificate
+verification disabled for Python and common HTTPS clients used by CrewAI
+Studio.
+
 #### On Windows
 
 1. **Clone the repository (or use downloaded ZIP file)**:
@@ -77,6 +84,9 @@ bc1qgsn45g02wran4lph5gsyqtk0k7t98zsg6qur0y
    ```powershell
    ./run_venv.bat
    ```
+
+TLS verification is disabled automatically by the Windows scripts to support
+network environments with SSL inspection.
 
 ### Using Conda
 
@@ -102,6 +112,9 @@ Conda will be installed locally in the project folder. No need for a pre-existin
    ./run_conda.sh
    ```
 
+The Conda installer and launcher set insecure TLS flags so dependencies and
+runtime HTTP calls ignore certificate validation.
+
 #### On Windows
 
 1. **Clone the repository (or use downloaded ZIP file)**:
@@ -121,6 +134,9 @@ Conda will be installed locally in the project folder. No need for a pre-existin
    ```powershell
    ./run_conda.bat
    ```
+
+Certificate checks are suppressed by default when running via the Windows
+Conda scripts.
 
 ### One-Click Deployment
 
@@ -151,6 +167,9 @@ cp .env_example .env
 ```
 docker-compose up --build
 ```
+
+The Docker image also ships with TLS verification disabled to remain compatible
+with SSL-intercepting proxies during build and runtime.
 
 4. Access the application: http://localhost:8501
 
