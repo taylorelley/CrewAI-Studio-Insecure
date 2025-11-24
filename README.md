@@ -17,6 +17,9 @@ Welcome to CrewAI Studio! This edition is tailored for environments with TLS/SSL
 - **TLS/SSL inspection ready**: All installation and runtime entrypoints disable
   certificate verification (including `requests` sessions) so the app keeps
   working behind SSL-inspecting proxies or with self-signed certs.
+- **Postgres search tool**: The PGSearch tool loads only when your installed
+  `crewai-tools` release provides it, preventing import errors in environments
+  that ship a build without that optional integration.
 
 ## Support CrewAI Studio
 

@@ -1,7 +1,20 @@
+import logging
 import streamlit as st
 import os
 from utils import rnd_id
 from crewai_tools import CodeInterpreterTool,ScrapeElementFromWebsiteTool,TXTSearchTool,SeleniumScrapingTool,PDFSearchTool,MDXSearchTool,JSONSearchTool,GithubSearchTool,EXASearchTool,DOCXSearchTool,CSVSearchTool,ScrapeWebsiteTool, FileReadTool, DirectorySearchTool, DirectoryReadTool, CodeDocsSearchTool, YoutubeVideoSearchTool,SerperDevTool,YoutubeChannelSearchTool,WebsiteSearchTool
+
+try:
+    from crewai_tools import PGSearchTool
+    _pg_search_available = True
+except ImportError:
+    PGSearchTool = None  # type: ignore
+    _pg_search_available = False
+
+if not _pg_search_available:
+    logging.warning(
+        "PGSearchTool is not available in the installed crewai_tools package; the Postgres search tool will be disabled unless a compatible version is installed."
+    )
 from tools.CSVSearchToolEnhanced import CSVSearchToolEnhanced
 from tools.CustomApiTool import CustomApiTool
 from tools.CustomCodeInterpreterTool import CustomCodeInterpreterTool
@@ -166,6 +179,31 @@ class MyEXASearchTool(MyTool):
     def create_tool(self) -> EXASearchTool:
         os.environ['EXA_API_KEY'] = self.parameters.get('EXA_API_KEY')
         return EXASearchTool()
+
+
+if _pg_search_available:
+    class MyPGSearchTool(MyTool):
+        def __init__(self, tool_id=None, connection_string=None):
+            parameters = {
+                'connection_string': {'mandatory': True}
+            }
+            super().__init__(tool_id, 'PGSearchTool', "Search Postgres content using semantic similarity.", parameters, connection_string=connection_string)
+
+        def create_tool(self) -> PGSearchTool:  # type: ignore[override]
+            return PGSearchTool(connection_string=self.parameters.get('connection_string'))
+else:
+    class MyPGSearchTool(MyTool):
+        def __init__(self, tool_id=None, connection_string=None):
+            parameters = {
+                'connection_string': {'mandatory': True}
+            }
+            super().__init__(tool_id, 'PGSearchTool', "Search Postgres content using semantic similarity (requires a crewai_tools version that provides PGSearchTool).", parameters, connection_string=connection_string)
+
+        def create_tool(self):
+            logging.warning(
+                "PGSearchTool is unavailable in the installed crewai_tools package; install a release that exposes it to enable this tool."
+            )
+            raise ImportError("PGSearchTool is not available in the installed crewai_tools package.")
 
 class MyGithubSearchTool(MyTool):
     def __init__(self, tool_id=None, github_repo=None, gh_token=None, content_types=None):
@@ -420,3 +458,6 @@ TOOL_CLASSES = {
     'MDXSearchTool': MyMDXSearchTool,
     'PDFSearchTool': MyPDFSearchTool
 }
+
+if _pg_search_available:
+    TOOL_CLASSES['PGSearchTool'] = MyPGSearchTool
