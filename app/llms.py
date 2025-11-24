@@ -1,13 +1,14 @@
 import os
-from dotenv import load_dotenv
+from typing import Optional
+
 import streamlit as st
-from langchain_openai import ChatOpenAI
-from langchain_groq import ChatGroq
-from langchain_anthropic import ChatAnthropic
 from crewai import LLM
+from dotenv import load_dotenv
+from langchain_anthropic import ChatAnthropic
+from langchain_groq import ChatGroq
+from langchain_openai import ChatOpenAI
 from langchain_openai.chat_models.base import BaseChatOpenAI
 from litellm import completion
-from typing import Optional
 
 def load_secrets_from_env():
     load_dotenv(override=True)
@@ -15,10 +16,12 @@ def load_secrets_from_env():
         st.session_state.env_vars = {
             "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY"),
             "OPENAI_API_BASE": os.getenv("OPENAI_API_BASE", "https://api.openai.com/v1/"),
+            "OPENAI_PROXY_MODELS": os.getenv("OPENAI_PROXY_MODELS"),
             "GROQ_API_KEY": os.getenv("GROQ_API_KEY"),
             "LMSTUDIO_API_BASE": os.getenv("LMSTUDIO_API_BASE"),
             "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY"),
             "OLLAMA_HOST": os.getenv("OLLAMA_HOST"),
+            "OLLAMA_MODELS": os.getenv("OLLAMA_MODELS"),
             "XAI_API_KEY": os.getenv("XAI_API_KEY"),
             "GEMINI_API_KEY": os.getenv("GEMINI_API_KEY"),
             "AZURE_OPENAI_API_KEY": os.getenv("AZURE_OPENAI_API_KEY"),
@@ -45,6 +48,17 @@ def restore_environment():
             os.environ[key] = value
         elif key in os.environ:
             del os.environ[key]
+
+
+def _get_env_var(key, default=None):
+    if "env_vars" in st.session_state and st.session_state.env_vars.get(key) is not None:
+        return st.session_state.env_vars.get(key)
+    return os.getenv(key, default)
+
+
+def _has_env_value(key):
+    value = _get_env_var(key)
+    return value is not None and str(value).strip() != ""
 
 def safe_pop_env_var(key):
     os.environ.pop(key, None)
@@ -215,86 +229,120 @@ def create_lmstudio_llm(model, temperature):
     else:
         raise ValueError("LM Studio API base not set in .env file")
 
-LLM_CONFIG = {
-    "OpenAI": {
-        "models": os.getenv("OPENAI_PROXY_MODELS", "").split(",") if os.getenv("OPENAI_PROXY_MODELS") else [
-            "gpt-4.1",
-            "gpt-4.1-mini",
-            "gpt-4.1-nano",
-            "gpt-4o",
-            "gpt-4o-mini",
-            "gpt-4-turbo",
-            "o3-mini",
-            "o1-mini",
-            "o1",
-            "gpt-3.5-turbo",
-        ],
-        "create_llm": create_openai_llm,
-    },
-    "Groq": {
-        "models": ["groq/llama3-8b-8192", "groq/llama3-70b-8192", "groq/mixtral-8x7b-32768"],
-        "create_llm": create_groq_llm,
-    },
-    "Ollama": {
-        "models": os.getenv("OLLAMA_MODELS", "").split(",") if os.getenv("OLLAMA_MODELS") else [],
-        "create_llm": create_ollama_llm,
-    },
-    "Anthropic": {
-        "models": [
-            "claude-3-5-sonnet-20240620",
-            "claude-3-7-sonnet-20250219",
-            "claude-sonnet-4-20250514",
-            "claude-sonnet-4-5-20250929",
-        ],
-        "create_llm": create_anthropic_llm,
-    },
-    "LM Studio": {
-        "models": ["lms-default"],
-        "create_llm": create_lmstudio_llm,
-    },
-     "Xai": {
-        "models": ["xai/grok-2-1212", "xai/grok-beta"],
-        "create_llm": create_xai_llm,
-    },
-    "Gemini": {
-        "models": [
-            "gemini/gemini-2.5-flash",
-            "gemini/gemini-2.5-pro",
-            "gemini/gemini-2.0-flash",
-        ],
-        "create_llm": create_gemini_llm,
-    },
-    "Azure OpenAI": {
-        "models": [
-            "gpt-4o",
-            "gpt-4.1",
-            "gpt-4.1-mini",
-            "gpt-4-turbo",
-        ],
-        "create_llm": create_azure_openai_llm,
-    },
-    "Bedrock": {
-        "models": [
-            "anthropic.claude-3-7-sonnet-20250219-v1:0",
-            "meta.llama3-1-70b-instruct-v1:0",
-            "amazon.nova-pro-v1:0",
-            "mistral.mistral-large-2402-v1:0",
-            "cohere.command-r-plus-v1:0",
-            "deepseek.r1-v1:0",
-        ],
-        "create_llm": create_bedrock_llm,
-    },
-}
+def get_llm_config():
+    openai_models = _get_env_var("OPENAI_PROXY_MODELS")
+    ollama_models = _get_env_var("OLLAMA_MODELS")
+
+    return {
+        "OpenAI": {
+            "models": openai_models.split(",") if openai_models else [
+                "gpt-4.1",
+                "gpt-4.1-mini",
+                "gpt-4.1-nano",
+                "gpt-4o",
+                "gpt-4o-mini",
+                "gpt-4-turbo",
+                "o3-mini",
+                "o1-mini",
+                "o1",
+                "gpt-3.5-turbo",
+            ],
+            "create_llm": create_openai_llm,
+        },
+        "Groq": {
+            "models": ["groq/llama3-8b-8192", "groq/llama3-70b-8192", "groq/mixtral-8x7b-32768"],
+            "create_llm": create_groq_llm,
+        },
+        "Ollama": {
+            "models": ollama_models.split(",") if ollama_models else [],
+            "create_llm": create_ollama_llm,
+        },
+        "Anthropic": {
+            "models": [
+                "claude-3-5-sonnet-20240620",
+                "claude-3-7-sonnet-20250219",
+                "claude-sonnet-4-20250514",
+                "claude-sonnet-4-5-20250929",
+            ],
+            "create_llm": create_anthropic_llm,
+        },
+        "LM Studio": {
+            "models": ["lms-default"],
+            "create_llm": create_lmstudio_llm,
+        },
+        "Xai": {
+            "models": ["xai/grok-2-1212", "xai/grok-beta"],
+            "create_llm": create_xai_llm,
+        },
+        "Gemini": {
+            "models": [
+                "gemini/gemini-2.5-flash",
+                "gemini/gemini-2.5-pro",
+                "gemini/gemini-2.0-flash",
+            ],
+            "create_llm": create_gemini_llm,
+        },
+        "Azure OpenAI": {
+            "models": [
+                "gpt-4o",
+                "gpt-4.1",
+                "gpt-4.1-mini",
+                "gpt-4-turbo",
+            ],
+            "create_llm": create_azure_openai_llm,
+        },
+        "Bedrock": {
+            "models": [
+                "anthropic.claude-3-7-sonnet-20250219-v1:0",
+                "meta.llama3-1-70b-instruct-v1:0",
+                "amazon.nova-pro-v1:0",
+                "mistral.mistral-large-2402-v1:0",
+                "cohere.command-r-plus-v1:0",
+                "deepseek.r1-v1:0",
+            ],
+            "create_llm": create_bedrock_llm,
+        },
+    }
+
+
+def get_available_llm_config():
+    config = get_llm_config()
+    availability_checks = {
+        "OpenAI": lambda: _has_env_value("OPENAI_API_KEY"),
+        "Groq": lambda: _has_env_value("GROQ_API_KEY"),
+        "Ollama": lambda: _has_env_value("OLLAMA_HOST"),
+        "Anthropic": lambda: _has_env_value("ANTHROPIC_API_KEY"),
+        "LM Studio": lambda: _has_env_value("LMSTUDIO_API_BASE"),
+        "Xai": lambda: _has_env_value("XAI_API_KEY"),
+        "Gemini": lambda: _has_env_value("GEMINI_API_KEY"),
+        "Azure OpenAI": lambda: _has_env_value("AZURE_OPENAI_API_KEY") and _has_env_value("AZURE_OPENAI_ENDPOINT"),
+        "Bedrock": lambda: _has_env_value("AWS_REGION"),
+    }
+
+    available_config = {}
+    for provider, provider_config in config.items():
+        if availability_checks.get(provider, lambda: False)():
+            models = [model for model in provider_config.get("models", []) if model]
+            if models:
+                available_config[provider] = {**provider_config, "models": models}
+
+    return available_config
+
 
 def llm_providers_and_models():
-    return [f"{provider}: {model}" for provider in LLM_CONFIG.keys() for model in LLM_CONFIG[provider]["models"]]
+    available_config = get_available_llm_config()
+    return [f"{provider}: {model}" for provider in available_config.keys() for model in available_config[provider]["models"]]
+
 
 def create_llm(provider_and_model, temperature=0.15):
+    if not provider_and_model or provider_and_model == "none:none":
+        raise ValueError("No LLM provider/model configured. Please update your .env with valid credentials.")
+
     # Rozdělit pouze na první výskyt ': ', aby model mohl obsahovat dvojtečku
     if ": " not in provider_and_model:
         raise ValueError("Input string must be in format 'Provider: Model'")
     provider, model = provider_and_model.split(": ", 1)
-    create_llm_func = LLM_CONFIG.get(provider, {}).get("create_llm")
+    create_llm_func = get_llm_config().get(provider, {}).get("create_llm")
 
     if create_llm_func:
         llm = create_llm_func(model, temperature)

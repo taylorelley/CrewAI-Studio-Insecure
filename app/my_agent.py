@@ -7,6 +7,7 @@ from llms import llm_providers_and_models, create_llm
 from datetime import datetime
 
 class MyAgent:
+    NO_LLM_SENTINEL = "none:none"
     def __init__(self, id=None, role=None, backstory=None, goal=None, temperature=None, allow_delegation=False, verbose=False, cache= None, llm_provider_model=None, max_iter=None, created_at=None, tools=None, knowledge_source_ids=None):
         self.id = id or "A_" + rnd_id()
         self.role = role or "Senior Researcher"
@@ -15,7 +16,11 @@ class MyAgent:
         self.temperature = temperature or 0.1
         self.allow_delegation = allow_delegation if allow_delegation is not None else False
         self.verbose = verbose if verbose is not None else True
-        self.llm_provider_model = llm_providers_and_models()[0] if llm_provider_model is None else llm_provider_model
+        available_llms = llm_providers_and_models()
+        if llm_provider_model is None:
+            self.llm_provider_model = available_llms[0] if available_llms else self.NO_LLM_SENTINEL
+        else:
+            self.llm_provider_model = llm_provider_model
         self.created_at = created_at or datetime.now().isoformat()
         self.tools = tools or []
         self.max_iter = max_iter or 25
@@ -34,6 +39,9 @@ class MyAgent:
         ss[self.edit_key] = value
 
     def get_crewai_agent(self) -> Agent:
+        if not self.llm_provider_model or self.llm_provider_model == self.NO_LLM_SENTINEL:
+            raise ValueError("No LLM provider/model configured. Please configure an LLM in your environment before creating agents.")
+
         llm = create_llm(self.llm_provider_model, temperature=self.temperature)
         tools = [tool.create_tool() for tool in self.tools]
         
@@ -85,12 +93,20 @@ class MyAgent:
 
     def validate_llm_provider_model(self):
         available_models = llm_providers_and_models()
-        if self.llm_provider_model not in available_models:
-            self.llm_provider_model = available_models[0]
+        if available_models:
+            if self.llm_provider_model not in available_models:
+                self.llm_provider_model = available_models[0]
+        else:
+            self.llm_provider_model = self.NO_LLM_SENTINEL
 
     def draw(self, key=None):
         self.validate_llm_provider_model()
-        expander_title = f"{self.role[:60]} -{self.llm_provider_model.split(':')[1]}" if self.is_valid() else f"❗ {self.role[:20]} -{self.llm_provider_model.split(':')[1]}"
+        if self.llm_provider_model and ": " in self.llm_provider_model:
+            _, selected_model = self.llm_provider_model.split(": ", 1)
+        else:
+            selected_model = "No LLM configured"
+
+        expander_title = f"{self.role[:60]} -{selected_model}" if self.is_valid() else f"❗ {self.role[:20]} -{selected_model}"
         form_key = f'form_{self.id}_{key}' if key else f'form_{self.id}'        
         if self.edit:
             with st.expander(f"Agent: {self.role}", expanded=True):
@@ -101,7 +117,17 @@ class MyAgent:
                     self.allow_delegation = st.checkbox("Allow delegation", value=self.allow_delegation)
                     self.verbose = st.checkbox("Verbose", value=self.verbose)
                     self.cache = st.checkbox("Cache", value=self.cache)
-                    self.llm_provider_model = st.selectbox("LLM Provider and Model", options=llm_providers_and_models(), index=llm_providers_and_models().index(self.llm_provider_model))
+                    available_llms = llm_providers_and_models()
+                    if available_llms:
+                        selected_index = available_llms.index(self.llm_provider_model) if self.llm_provider_model in available_llms else 0
+                        self.llm_provider_model = st.selectbox(
+                            "LLM Provider and Model",
+                            options=available_llms,
+                            index=selected_index,
+                        )
+                    else:
+                        st.warning("No LLM providers are configured. Please update your .env file.")
+                        self.llm_provider_model = self.NO_LLM_SENTINEL
                     self.temperature = st.slider("Temperature", value=self.temperature, min_value=0.0, max_value=1.0)
                     self.max_iter = st.number_input("Max Iterations", value=self.max_iter, min_value=1, max_value=100)                    
                     enabled_tools = [tool for tool in ss.tools]
