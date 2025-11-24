@@ -4,7 +4,7 @@ crewai-tools==0.76.0
 # modules (e.g., langchain.docstore.document) that were removed in later releases.
 langchain==0.1.17
 langchain-community==0.0.36
-langchain-openai==0.1.0
+langchain-openai==0.1.7
 langchain-groq==0.1.3
 langchain-anthropic==0.1.10
 streamlit
