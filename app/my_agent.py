@@ -15,7 +15,8 @@ class MyAgent:
         self.temperature = temperature or 0.1
         self.allow_delegation = allow_delegation if allow_delegation is not None else False
         self.verbose = verbose if verbose is not None else True
-        self.llm_provider_model = llm_providers_and_models()[0] if llm_provider_model is None else llm_provider_model
+        available_llms = llm_providers_and_models()
+        self.llm_provider_model = available_llms[0] if llm_provider_model is None and available_llms else llm_provider_model
         self.created_at = created_at or datetime.now().isoformat()
         self.tools = tools or []
         self.max_iter = max_iter or 25
@@ -85,7 +86,7 @@ class MyAgent:
 
     def validate_llm_provider_model(self):
         available_models = llm_providers_and_models()
-        if self.llm_provider_model not in available_models:
+        if self.llm_provider_model not in available_models and available_models:
             self.llm_provider_model = available_models[0]
 
     def draw(self, key=None):
@@ -101,7 +102,16 @@ class MyAgent:
                     self.allow_delegation = st.checkbox("Allow delegation", value=self.allow_delegation)
                     self.verbose = st.checkbox("Verbose", value=self.verbose)
                     self.cache = st.checkbox("Cache", value=self.cache)
-                    self.llm_provider_model = st.selectbox("LLM Provider and Model", options=llm_providers_and_models(), index=llm_providers_and_models().index(self.llm_provider_model))
+                    available_llms = llm_providers_and_models()
+                    if available_llms:
+                        selected_index = available_llms.index(self.llm_provider_model) if self.llm_provider_model in available_llms else 0
+                        self.llm_provider_model = st.selectbox(
+                            "LLM Provider and Model",
+                            options=available_llms,
+                            index=selected_index,
+                        )
+                    else:
+                        st.warning("No LLM providers are configured. Please update your .env file.")
                     self.temperature = st.slider("Temperature", value=self.temperature, min_value=0.0, max_value=1.0)
                     self.max_iter = st.number_input("Max Iterations", value=self.max_iter, min_value=1, max_value=100)                    
                     enabled_tools = [tool for tool in ss.tools]
