@@ -10,7 +10,7 @@ from pg_export_crew import PageExportCrew
 from pg_results import PageResults
 from pg_knowledge import PageKnowledge
 from dotenv import load_dotenv
-from llms import load_secrets_fron_env
+from llms import load_secrets_from_env
 import os
 from ssl_override import disable_ssl_verification
 
@@ -53,7 +53,7 @@ def draw_sidebar():
 def main():
     st.set_page_config(page_title="CrewAI Studio", page_icon="img/favicon.ico", layout="wide")
     load_dotenv()
-    load_secrets_fron_env()
+    load_secrets_from_env()
     if (str(os.getenv('AGENTOPS_ENABLED')).lower() in ['true', '1']) and not ss.get('agentops_failed', False):
         try:
             import agentops

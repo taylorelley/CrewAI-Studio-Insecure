@@ -9,7 +9,7 @@ from langchain_openai.chat_models.base import BaseChatOpenAI
 from litellm import completion
 from typing import Optional
 
-def load_secrets_fron_env():
+def load_secrets_from_env():
     load_dotenv(override=True)
     if "env_vars" not in st.session_state:
         st.session_state.env_vars = {
@@ -235,7 +235,7 @@ LLM_CONFIG = {
         "models": [
             "claude-3-5-sonnet-20240620",
             "claude-3-7-sonnet-20250219",
-            "claude-4-sonnet-20250514",
+            "claude-sonnet-4-20250514",
             "claude-sonnet-4-5-20250929",
         ],
         "create_llm": create_anthropic_llm,
@@ -253,8 +253,6 @@ LLM_CONFIG = {
             "gemini-2.5-flash",
             "gemini-2.5-pro",
             "gemini-2.0-flash",
-            "gemini-1.5-pro",
-            "gemini-1.5-flash",
         ],
         "create_llm": create_gemini_llm,
     },
