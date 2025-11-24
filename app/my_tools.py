@@ -1,7 +1,20 @@
+import logging
 import streamlit as st
 import os
 from utils import rnd_id
-from crewai_tools import CodeInterpreterTool,ScrapeElementFromWebsiteTool,TXTSearchTool,SeleniumScrapingTool,PGSearchTool,PDFSearchTool,MDXSearchTool,JSONSearchTool,GithubSearchTool,EXASearchTool,DOCXSearchTool,CSVSearchTool,ScrapeWebsiteTool, FileReadTool, DirectorySearchTool, DirectoryReadTool, CodeDocsSearchTool, YoutubeVideoSearchTool,SerperDevTool,YoutubeChannelSearchTool,WebsiteSearchTool
+from crewai_tools import CodeInterpreterTool,ScrapeElementFromWebsiteTool,TXTSearchTool,SeleniumScrapingTool,PDFSearchTool,MDXSearchTool,JSONSearchTool,GithubSearchTool,EXASearchTool,DOCXSearchTool,CSVSearchTool,ScrapeWebsiteTool, FileReadTool, DirectorySearchTool, DirectoryReadTool, CodeDocsSearchTool, YoutubeVideoSearchTool,SerperDevTool,YoutubeChannelSearchTool,WebsiteSearchTool
+
+try:
+    from crewai_tools import PGSearchTool
+    _pg_search_available = True
+except ImportError:
+    PGSearchTool = None  # type: ignore
+    _pg_search_available = False
+
+if not _pg_search_available:
+    logging.warning(
+        "PGSearchTool is not available in the installed crewai_tools package; the Postgres search tool will be disabled unless a compatible version is installed."
+    )
 from tools.CSVSearchToolEnhanced import CSVSearchToolEnhanced
 from tools.CustomApiTool import CustomApiTool
 from tools.CustomCodeInterpreterTool import CustomCodeInterpreterTool
@@ -167,6 +180,31 @@ class MyEXASearchTool(MyTool):
         os.environ['EXA_API_KEY'] = self.parameters.get('EXA_API_KEY')
         return EXASearchTool()
 
+
+if _pg_search_available:
+    class MyPGSearchTool(MyTool):
+        def __init__(self, tool_id=None, connection_string=None):
+            parameters = {
+                'connection_string': {'mandatory': True}
+            }
+            super().__init__(tool_id, 'PGSearchTool', "Search Postgres content using semantic similarity.", parameters, connection_string=connection_string)
+
+        def create_tool(self) -> PGSearchTool:  # type: ignore[override]
+            return PGSearchTool(connection_string=self.parameters.get('connection_string'))
+else:
+    class MyPGSearchTool(MyTool):
+        def __init__(self, tool_id=None, connection_string=None):
+            parameters = {
+                'connection_string': {'mandatory': True}
+            }
+            super().__init__(tool_id, 'PGSearchTool', "Search Postgres content using semantic similarity (requires a crewai_tools version that provides PGSearchTool).", parameters, connection_string=connection_string)
+
+        def create_tool(self):
+            logging.warning(
+                "PGSearchTool is unavailable in the installed crewai_tools package; install a release that exposes it to enable this tool."
+            )
+            raise ImportError("PGSearchTool is not available in the installed crewai_tools package.")
+
 class MyGithubSearchTool(MyTool):
     def __init__(self, tool_id=None, github_repo=None, gh_token=None, content_types=None):
         parameters = {
@@ -212,16 +250,6 @@ class MyPDFSearchTool(MyTool):
 
     def create_tool(self) -> PDFSearchTool:
         return PDFSearchTool(self.parameters.get('pdf') if self.parameters.get('pdf') else None)
-
-class MyPGSearchTool(MyTool):
-    def __init__(self, tool_id=None, db_uri=None):
-        parameters = {
-            'db_uri': {'mandatory': True}
-        }
-        super().__init__(tool_id, 'PGSearchTool', "A tool that can be used to semantic search a query from a database table's content.", parameters, db_uri=db_uri)
-
-    def create_tool(self) -> PGSearchTool:
-        return PGSearchTool(self.parameters.get('db_uri'))
 
 class MySeleniumScrapingTool(MyTool):
     def __init__(self, tool_id=None, website_url=None, css_element=None, cookie=None, wait_time=None):
@@ -428,6 +456,8 @@ TOOL_CLASSES = {
     'EXASearchTool': MyEXASearchTool,
     'JSONSearchTool': MyJSONSearchTool,
     'MDXSearchTool': MyMDXSearchTool,
-    'PDFSearchTool': MyPDFSearchTool,
-    'PGSearchTool': MyPGSearchTool    
+    'PDFSearchTool': MyPDFSearchTool
 }
+
+if _pg_search_available:
+    TOOL_CLASSES['PGSearchTool'] = MyPGSearchTool

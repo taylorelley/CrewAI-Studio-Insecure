@@ -17,6 +17,19 @@ Welcome to CrewAI Studio! This edition is tailored for environments with TLS/SSL
 - **TLS/SSL inspection ready**: All installation and runtime entrypoints disable
   certificate verification (including `requests` sessions) so the app keeps
   working behind SSL-inspecting proxies or with self-signed certs.
+- **Postgres search tool**: The PGSearch tool loads only when your installed
+  `crewai-tools` release provides it, preventing import errors in environments
+  that ship a build without that optional integration.
+- **Pinned, compatible dependencies**: LangChain (0.3.25 family),
+  LangChain-Community (0.3.24), LangChain-OpenAI (0.2.1), LangChain-Groq
+  (0.2.0), LangChain-Anthropic (0.2.3), Embedchain (0.1.128), CrewAI
+  (0.165.1), CrewAI-Tools (0.65.0), and ChromaDB (0.5.23) are pinned to
+  compatible releases so language model and search tools import cleanly
+  without pip resolver backtracking.
+  Provider SDK pins share the same `langchain-core<0.4` range to avoid
+  conflicts, the CrewAI pin meets CrewAI-Tools' minimum version requirement,
+  and the CrewAI-Tools pin avoids the `pypdf>=5.9` requirement that would
+  clash with Embedchain's `pypdf<5` constraint.
 
 ## Support CrewAI Studio
 

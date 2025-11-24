@@ -1,11 +1,12 @@
-crewai
-crewai-tools
-langchain
-langchain-community
-langchain-openai
-langchain-groq
-langchain-anthropic
-langchain-ollama
+crewai==0.165.1
+crewai-tools==0.65.0
+# Pin LangChain packages to aligned 0.3-series releases so embedchain and provider
+# SDKs share the same langchain-core range without resolver backtracking.
+langchain==0.3.25
+langchain-community==0.3.24
+langchain-openai==0.2.1
+langchain-groq==0.2.0
+langchain-anthropic==0.2.3
 streamlit
 python-dotenv
 pdfminer.six
@@ -15,4 +16,5 @@ snowflake-connector-python
 markdown
 docling
 duckduckgo-search>=8.0.2
-embedchain
+chromadb==0.5.23
+embedchain==0.1.128
