@@ -127,6 +127,9 @@ def create_gemini_llm(model: str, temperature: Optional[float]):
     if not api_key:
         raise ValueError("GEMINI_API_KEY must be set in .env file")
 
+    if not model.startswith("gemini/"):
+        raise ValueError(f"Model must start with 'gemini/', got: {model}")
+
     switch_environment({"GEMINI_API_KEY": api_key})
 
     return LLM(
@@ -255,9 +258,9 @@ LLM_CONFIG = {
     },
     "Gemini": {
         "models": [
-            "gemini-2.5-flash",
-            "gemini-2.5-pro",
-            "gemini-2.0-flash",
+            "gemini/gemini-2.5-flash",
+            "gemini/gemini-2.5-pro",
+            "gemini/gemini-2.0-flash",
         ],
         "create_llm": create_gemini_llm,
     },

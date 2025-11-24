@@ -52,7 +52,6 @@ def draw_sidebar():
             
 def main():
     st.set_page_config(page_title="CrewAI Studio", page_icon="img/favicon.ico", layout="wide")
-    load_dotenv()
     load_secrets_from_env()
     if (str(os.getenv('AGENTOPS_ENABLED')).lower() in ['true', '1']) and not ss.get('agentops_failed', False):
         try:
