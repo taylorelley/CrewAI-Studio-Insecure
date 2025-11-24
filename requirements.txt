@@ -1,11 +1,13 @@
 crewai
 crewai-tools
-langchain
-langchain-community
-langchain-openai
-langchain-groq
-langchain-anthropic
-langchain-ollama
+# Pin LangChain packages to the 0.1 series because embedchain depends on modules
+# (e.g., langchain.docstore.document) that were removed in later releases.
+langchain<0.2
+langchain-community<0.2
+langchain-openai<0.2
+langchain-groq<0.2
+langchain-anthropic<0.2
+langchain-ollama<0.2
 streamlit
 python-dotenv
 pdfminer.six
