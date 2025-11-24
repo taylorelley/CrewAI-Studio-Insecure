@@ -335,6 +335,9 @@ def llm_providers_and_models():
 
 
 def create_llm(provider_and_model, temperature=0.15):
+    if not provider_and_model or provider_and_model == "none:none":
+        raise ValueError("No LLM provider/model configured. Please update your .env with valid credentials.")
+
     # Rozdělit pouze na první výskyt ': ', aby model mohl obsahovat dvojtečku
     if ": " not in provider_and_model:
         raise ValueError("Input string must be in format 'Provider: Model'")
