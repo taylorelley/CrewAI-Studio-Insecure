@@ -15,7 +15,7 @@ import os
 from ssl_override import disable_ssl_verification
 
 # Ensure TLS/SSL verification is disabled before any network operations
-disable_ssl_verification("SSL verification disabled for inspected TLS environment.")
+disable_ssl_verification()
 
 def pages():
     return {
