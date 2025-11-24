@@ -23,6 +23,7 @@ def load_secrets_from_env():
             "GEMINI_API_KEY": os.getenv("GEMINI_API_KEY"),
             "AZURE_OPENAI_API_KEY": os.getenv("AZURE_OPENAI_API_KEY"),
             "AZURE_OPENAI_ENDPOINT": os.getenv("AZURE_OPENAI_ENDPOINT"),
+            "AZURE_OPENAI_DEPLOYMENT_NAME": os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME"),
             "AZURE_OPENAI_API_VERSION": os.getenv("AZURE_OPENAI_API_VERSION"),
             "AWS_ACCESS_KEY_ID": os.getenv("AWS_ACCESS_KEY_ID"),
             "AWS_SECRET_ACCESS_KEY": os.getenv("AWS_SECRET_ACCESS_KEY"),
@@ -139,6 +140,7 @@ def create_gemini_llm(model: str, temperature: Optional[float]):
 def create_azure_openai_llm(model: str, temperature: Optional[float]):
     api_key = st.session_state.env_vars.get("AZURE_OPENAI_API_KEY")
     endpoint = st.session_state.env_vars.get("AZURE_OPENAI_ENDPOINT")
+    deployment = st.session_state.env_vars.get("AZURE_OPENAI_DEPLOYMENT_NAME") or model
     api_version = st.session_state.env_vars.get("AZURE_OPENAI_API_VERSION")
 
     if not api_key or not endpoint:
@@ -148,15 +150,18 @@ def create_azure_openai_llm(model: str, temperature: Optional[float]):
         {
             "AZURE_OPENAI_API_KEY": api_key,
             "AZURE_OPENAI_ENDPOINT": endpoint,
+            "AZURE_OPENAI_DEPLOYMENT_NAME": deployment,
             "AZURE_OPENAI_API_VERSION": api_version,
         }
     )
 
+    deployment_base = f"{endpoint.rstrip('/')}/openai/deployments/{deployment}"
+
     return LLM(
-        model=model,
+        model=deployment,
         temperature=temperature,
         api_key=api_key,
-        base_url=endpoint,
+        base_url=deployment_base,
         api_version=api_version,
         provider="azure",
     )
