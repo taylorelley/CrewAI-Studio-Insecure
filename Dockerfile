@@ -11,10 +11,16 @@ RUN apt-get install build-essential -y
 
 RUN mkdir /CrewAI-Studio
 
+# Relax TLS/SSL verification for all runtime components
+ENV PYTHONHTTPSVERIFY=0 \
+    REQUESTS_CA_BUNDLE= \
+    CURL_CA_BUNDLE= \
+    SSL_CERT_FILE=
+
 # Install requirements
 COPY ./requirements.txt /CrewAI-Studio/requirements.txt
 WORKDIR /CrewAI-Studio
-RUN pip install -r requirements.txt
+RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Copy CrewAI-Studio
 COPY ./ /CrewAI-Studio/

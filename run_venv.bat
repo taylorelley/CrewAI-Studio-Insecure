@@ -9,6 +9,12 @@ if %errorlevel% neq 0 (
     exit /b %errorlevel%
 )
 
+echo Disabling TLS/SSL verification for runtime...
+set PYTHONHTTPSVERIFY=0
+set REQUESTS_CA_BUNDLE=
+set CURL_CA_BUNDLE=
+set SSL_CERT_FILE=
+
 echo Running Streamlit app...
 cd %SCRIPT_DIR%
 
