@@ -13,11 +13,7 @@ from pg_flows import PageFlows
 from pg_testing import PageTesting
 from pg_templates import PageTemplates
 from pg_scheduler import PageScheduler
-from pg_profiling import PageProfiling
-from pg_compare import PageCompare
-from pg_llm_comparison import PageLLMComparison
 from webhooks import PageWebhooks
-from cost_tracker import PageCostDashboard
 from dotenv import load_dotenv
 from llms import load_secrets_from_env
 import os
@@ -39,10 +35,6 @@ def pages():
         'Testing & Debugging': PageTesting(),
         'Templates': PageTemplates(),
         'Scheduling': PageScheduler(),
-        'Profiling': PageProfiling(),
-        'Compare': PageCompare(),
-        'LLM Comparison': PageLLMComparison(),
-        'Cost': PageCostDashboard(),
         'Webhooks': PageWebhooks(),
         'Import/export': PageExportCrew()
     }
@@ -112,10 +104,6 @@ def draw_sidebar():
         'Testing & Debugging': 'Dry-run, step through, and mock crews or flows',
         'Templates': 'Starter blueprints and gallery',
         'Scheduling': 'Recurring jobs and upcoming runs',
-        'Profiling': 'Performance and token usage insights',
-        'Compare': 'Side-by-side crew and flow comparisons',
-        'LLM Comparison': 'Benchmark providers and failover settings',
-        'Cost': 'Estimates, budgets, and live tracking',
         'Webhooks': 'Trigger runs from external systems',
         'Import/export': 'Import/export crews and generate code'
     }
