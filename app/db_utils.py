@@ -332,3 +332,40 @@ def load_results():
 def delete_result(result_id):
     """Delete a result from the database."""
     delete_entity('result', result_id)
+
+
+# --- Flow persistence helpers -------------------------------------------------
+def save_flow(flow):
+    data = {
+        'name': flow.name,
+        'description': flow.description,
+        'version': flow.version,
+        'entry_event': flow.entry_event,
+        'state_preview': flow.state_preview,
+        'created_at': flow.created_at,
+    }
+    save_entity('flow', flow.id, data)
+
+
+def load_flows():
+    from my_flow import MyFlow
+    rows = load_entities('flow')
+    flows = []
+    for row in rows:
+        data = row[1]
+        flows.append(
+            MyFlow(
+                id=row[0],
+                name=data.get('name'),
+                description=data.get('description', ''),
+                version=data.get('version', 'v1'),
+                entry_event=data.get('entry_event', 'manual'),
+                state_preview=data.get('state_preview', {}),
+                created_at=data.get('created_at'),
+            )
+        )
+    return sorted(flows, key=lambda x: x.created_at)
+
+
+def delete_flow(flow_id):
+    delete_entity('flow', flow_id)
