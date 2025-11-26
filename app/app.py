@@ -9,6 +9,11 @@ from pg_crew_run import PageCrewRun
 from pg_export_crew import PageExportCrew
 from pg_results import PageResults
 from pg_knowledge import PageKnowledge
+from pg_flows import PageFlows
+from pg_testing import PageTesting
+from pg_templates import PageTemplates
+from pg_scheduler import PageScheduler
+from webhooks import PageWebhooks
 from dotenv import load_dotenv
 from llms import load_secrets_from_env
 import os
@@ -26,6 +31,11 @@ def pages():
         'Knowledge': PageKnowledge(),  # Add this line
         'Kickoff!': PageCrewRun(),
         'Results': PageResults(),
+        'Flows': PageFlows(),
+        'Testing & Debugging': PageTesting(),
+        'Templates': PageTemplates(),
+        'Scheduling': PageScheduler(),
+        'Webhooks': PageWebhooks(),
         'Import/export': PageExportCrew()
     }
 
@@ -36,6 +46,7 @@ def load_data():
     ss.tools = db_utils.load_tools()
     ss.enabled_tools = db_utils.load_tools_state()
     ss.knowledge_sources = db_utils.load_knowledge_sources()
+    ss.flows = db_utils.load_flows()
 
 
 def get_page_badges():
@@ -89,6 +100,11 @@ def draw_sidebar():
         'Knowledge': 'Manage knowledge sources for RAG',
         'Kickoff!': 'Execute crews and monitor progress',
         'Results': 'View and download crew execution results',
+        'Flows': 'Design event-driven flows and conditional routing',
+        'Testing & Debugging': 'Dry-run, step through, and mock crews or flows',
+        'Templates': 'Starter blueprints and gallery',
+        'Scheduling': 'Recurring jobs and upcoming runs',
+        'Webhooks': 'Trigger runs from external systems',
         'Import/export': 'Import/export crews and generate code'
     }
 
