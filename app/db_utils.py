@@ -342,6 +342,9 @@ def save_flow(flow):
         'version': flow.version,
         'entry_event': flow.entry_event,
         'state_preview': flow.state_preview,
+        'nodes': flow.nodes,
+        'edges': flow.edges,
+        'test_harness': flow.test_harness,
         'created_at': flow.created_at,
     }
     save_entity('flow', flow.id, data)
@@ -361,6 +364,9 @@ def load_flows():
                 version=data.get('version', 'v1'),
                 entry_event=data.get('entry_event', 'manual'),
                 state_preview=data.get('state_preview', {}),
+                nodes=data.get('nodes', []),
+                edges=data.get('edges', []),
+                test_harness=data.get('test_harness', {}),
                 created_at=data.get('created_at'),
             )
         )
