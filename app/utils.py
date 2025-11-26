@@ -173,3 +173,42 @@ def get_tasks_outputs_str(tasks_output: list[TaskOutput | str], tasks: list = No
         title = f"#  {desc}" if desc else "#  TASK"
         strRes += f"\n\n{title}\n{val}\n\n==========\n"
     return strRes
+
+
+def format_llm_display(provider_model_string):
+    """
+    Format LLM provider:model string into a more readable format.
+
+    Examples:
+        "OpenAI: gpt-4o" -> "GPT-4o (OpenAI)"
+        "Anthropic: claude-3-5-sonnet-20240620" -> "Claude 3.5 Sonnet (Anthropic)"
+        "Groq: groq/llama3-8b-8192" -> "Llama3 8B (Groq)"
+    """
+    if not provider_model_string or ": " not in provider_model_string:
+        return provider_model_string
+
+    provider, model = provider_model_string.split(": ", 1)
+
+    # Clean up model name
+    # Remove common prefixes
+    model_clean = model.replace("groq/", "").replace("xai/", "").replace("gemini/", "")
+
+    # Capitalize model name intelligently
+    if "gpt" in model_clean.lower():
+        # GPT-4o, GPT-4-turbo, etc.
+        model_clean = model_clean.upper().replace("GPT-", "GPT-")
+    elif "claude" in model_clean.lower():
+        # Claude 3.5 Sonnet, etc.
+        parts = model_clean.split("-")
+        if len(parts) >= 3:
+            model_clean = f"Claude {parts[1]}.{parts[2]} {parts[3].capitalize()}" if len(parts) > 3 else f"Claude {parts[1]}.{parts[2]}"
+    elif "llama" in model_clean.lower():
+        # Llama3 8B, etc.
+        model_clean = re.sub(r'llama(\d+)', r'Llama\1', model_clean, flags=re.IGNORECASE)
+        model_clean = re.sub(r'(\d+)b', r'\1B', model_clean, flags=re.IGNORECASE)
+    elif "gemini" in model_clean.lower():
+        # Gemini 2.5 Flash, etc.
+        model_clean = model_clean.replace("gemini-", "Gemini ")
+        model_clean = model_clean.replace("-", " ").title()
+
+    return f"{model_clean} ({provider})"

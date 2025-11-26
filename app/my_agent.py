@@ -1,8 +1,9 @@
 from crewai import Agent
 import streamlit as st
-from utils import rnd_id, fix_columns_width
+from utils import rnd_id, fix_columns_width, format_llm_display
 from streamlit import session_state as ss
-from db_utils import save_agent, delete_agent
+from db_utils import save_agent, delete_agent, save_task
+import db_utils
 from llms import llm_providers_and_models, create_llm
 from datetime import datetime
 
@@ -78,6 +79,95 @@ class MyAgent:
         ss.agents = [agent for agent in ss.agents if agent.id != self.id]
         delete_agent(self.id)
 
+    def request_delete_modal(self):
+        """Flag this agent for deletion and trigger modal display."""
+        ss['delete_agent_target_id'] = self.id
+
+    def clear_delete_modal(self):
+        if 'delete_agent_target_id' in ss:
+            del ss['delete_agent_target_id']
+
+    def analyze_dependencies(self):
+        """Analyze dependencies for this agent."""
+        conflicts = []
+
+        # Check if used in crews
+        used_in_crews = [c.name for c in ss.get('crews', []) if any(a.id == self.id for a in c.agents)]
+        if used_in_crews:
+            conflicts.append(f"Used in crews: {', '.join(used_in_crews)}")
+
+        # Check if used in tasks
+        used_in_tasks = [t.description[:40] for t in ss.get('tasks', []) if t.agent and t.agent.id == self.id]
+        if used_in_tasks:
+            conflicts.append(f"Assigned to {len(used_in_tasks)} task(s)")
+
+        return conflicts
+
+    def draw_delete_dialog(self):
+        conflicts = self.analyze_dependencies()
+
+        if not hasattr(st, 'dialog'):
+            st.error("This Streamlit version does not support st.dialog – please upgrade Streamlit.")
+            return
+
+        @st.dialog(f"Delete agent: {self.role}")
+        def _dlg():
+            st.markdown("### Confirm deleting agent")
+
+            if conflicts:
+                st.warning("⚠️ This agent has dependencies:")
+                for conflict in conflicts:
+                    st.markdown(f"- {conflict}")
+                st.markdown("Deleting this agent will:")
+                st.markdown("- Remove it from all crews")
+                st.markdown("- Unassign it from all tasks")
+
+            col_a, col_b = st.columns(2)
+            with col_a:
+                if st.button("Cancel"):
+                    self.clear_delete_modal()
+                    st.rerun()
+            with col_b:
+                if st.button("Delete agent", type="primary"):
+                    # Remove from crews
+                    for crew in ss.get('crews', []):
+                        if any(a.id == self.id for a in crew.agents):
+                            crew.agents = [a for a in crew.agents if a.id != self.id]
+                            db_utils.save_crew(crew)
+
+                    # Unassign from tasks
+                    for task in ss.get('tasks', []):
+                        if task.agent and task.agent.id == self.id:
+                            task.agent = None
+                            save_task(task)
+
+                    # Delete agent
+                    self.delete()
+                    self.clear_delete_modal()
+                    st.rerun()
+
+        _dlg()
+
+    def duplicate(self):
+        """Create a copy of this agent with a new ID"""
+        new_agent = MyAgent(
+            role=f"{self.role} (Copy)",
+            backstory=self.backstory,
+            goal=self.goal,
+            temperature=self.temperature,
+            allow_delegation=self.allow_delegation,
+            verbose=self.verbose,
+            cache=self.cache,
+            llm_provider_model=self.llm_provider_model,
+            max_iter=self.max_iter,
+            tools=self.tools.copy(),
+            knowledge_source_ids=self.knowledge_source_ids.copy()
+        )
+        ss.agents.append(new_agent)
+        save_agent(new_agent)
+        st.toast(f"✅ Agent '{new_agent.role}' duplicated successfully!", icon="✅")
+        return new_agent
+
     def get_tool_display_name(self, tool):
         first_param_name = tool.get_parameter_names()[0] if tool.get_parameter_names() else None
         first_param_value = tool.parameters.get(first_param_name, '') if first_param_name else ''
@@ -102,18 +192,20 @@ class MyAgent:
     def draw(self, key=None):
         self.validate_llm_provider_model()
         if self.llm_provider_model and ": " in self.llm_provider_model:
-            _, selected_model = self.llm_provider_model.split(": ", 1)
+            selected_model = format_llm_display(self.llm_provider_model)
         else:
             selected_model = "No LLM configured"
 
-        expander_title = f"{self.role[:60]} -{selected_model}" if self.is_valid() else f"❗ {self.role[:20]} -{selected_model}"
+        expander_title = f"{self.role[:60]} - {selected_model}" if self.is_valid() else f"❗ {self.role[:20]} - {selected_model}"
         form_key = f'form_{self.id}_{key}' if key else f'form_{self.id}'        
         if self.edit:
             with st.expander(f"Agent: {self.role}", expanded=True):
                 with st.form(key=form_key):
                     self.role = st.text_input("Role", value=self.role)
                     self.backstory = st.text_area("Backstory", value=self.backstory)
+                    st.caption(f"Characters: {len(self.backstory)}")
                     self.goal = st.text_area("Goal", value=self.goal)
+                    st.caption(f"Characters: {len(self.goal)}")
                     self.allow_delegation = st.checkbox("Allow delegation", value=self.allow_delegation)
                     self.verbose = st.checkbox("Verbose", value=self.verbose)
                     self.cache = st.checkbox("Cache", value=self.cache)
@@ -162,10 +254,16 @@ class MyAgent:
                             format_func=lambda x: knowledge_source_labels.get(x, "Unknown"),
                             key=ks_key
                         )
-                        self.knowledge_source_ids = selected_knowledge_sources                
-                    submitted = st.form_submit_button("Save")
+                        self.knowledge_source_ids = selected_knowledge_sources
+                    col_submit, col_cancel = st.columns(2)
+                    with col_submit:
+                        submitted = st.form_submit_button("Save", type="primary")
+                    with col_cancel:
+                        cancelled = st.form_submit_button("Cancel")
                     if submitted:
                         self.tools = [tool for tool in enabled_tools if self.get_tool_display_name(tool) in selected_tools]
+                        self.set_editable(False)
+                    elif cancelled:
                         self.set_editable(False)
         else:
             fix_columns_width()
@@ -188,13 +286,20 @@ class MyAgent:
                         for ks in knowledge_sources:
                             st.markdown(f"- {ks.name}")
                 self.is_valid(show_warning=True)
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
                 with col1:
                     btn_key = f"edit_btn_{rnd_id()}"
                     st.button("Edit", on_click=self.set_editable, args=(True,), key=btn_key)
                 with col2:
+                    dup_key = f"dup_btn_{rnd_id()}"
+                    st.button("Duplicate", on_click=self.duplicate, key=dup_key)
+                with col3:
                     del_key = f"del_btn_{rnd_id()}"
-                    st.button("Delete", on_click=self.delete, key=del_key)
+                    st.button("Delete", on_click=self.request_delete_modal, key=del_key)
+
+                # If this agent was selected for deletion, draw the modal here
+                if ss.get('delete_agent_target_id') == self.id:
+                    self.draw_delete_dialog()
 
     def set_editable(self, edit):
         self.edit = edit

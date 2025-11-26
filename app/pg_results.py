@@ -3,6 +3,7 @@ from streamlit import session_state as ss
 from db_utils import delete_result, load_results
 from datetime import datetime
 from utils import rnd_id, format_result, generate_printable_view, get_tasks_outputs_str
+import json
 
 class PageResults:
     def __init__(self):
@@ -105,13 +106,64 @@ class PageResults:
                 with tab3:
                     st.markdown(formatted_tasks_result)
 
-                col1, col2 = st.columns([1, 1])
+                # Download buttons
+                st.markdown("#### Download Options")
+                col_json, col_md, col_txt = st.columns(3)
+
+                # Prepare download data
+                download_data = {
+                    "crew_name": result.crew_name,
+                    "created_at": result.created_at,
+                    "inputs": result.inputs,
+                    "result": result.result
+                }
+
+                with col_json:
+                    st.download_button(
+                        label="📥 JSON",
+                        data=json.dumps(download_data, indent=2),
+                        file_name=f"{result.crew_name}_{result.id}.json",
+                        mime="application/json",
+                        key=f"download_json_{result.id}"
+                    )
+
+                with col_md:
+                    st.download_button(
+                        label="📥 Markdown",
+                        data=formatted_result,
+                        file_name=f"{result.crew_name}_{result.id}.md",
+                        mime="text/markdown",
+                        key=f"download_md_{result.id}"
+                    )
+
+                with col_txt:
+                    st.download_button(
+                        label="📥 Text",
+                        data=formatted_result,
+                        file_name=f"{result.crew_name}_{result.id}.txt",
+                        mime="text/plain",
+                        key=f"download_txt_{result.id}"
+                    )
+
+                st.markdown("#### Actions")
+                col1, col2, col3 = st.columns(3)
                 with col1:
+                    if st.button("🔄 Re-run with inputs", key=f"rerun_{result.id}"):
+                        # Set the selected crew and populate placeholders
+                        ss.selected_crew_name = result.crew_name
+                        # Populate placeholders with the saved inputs
+                        for key, value in result.inputs.items():
+                            placeholder_key = f'placeholder_{key}'
+                            ss.placeholders[placeholder_key] = value
+                        # Navigate to the Kickoff! page
+                        ss.page = "Kickoff!"
+                        st.rerun()
+                with col2:
                     if st.button("Delete", key=f"delete_{result.id}"):
                         delete_result(result.id)
                         ss.results.remove(result)
                         st.rerun()
-                with col2:
+                with col3:
                     # Create a button to open the printable view in a new tab
                     html_content = generate_printable_view(
                         result.crew_name,
