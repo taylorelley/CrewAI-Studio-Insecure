@@ -155,6 +155,28 @@ class MyCrew:
         ss.crews = [crew for crew in ss.crews if crew.id != self.id]
         db_utils.delete_crew(self.id)
 
+    def duplicate(self):
+        """Create a copy of this crew with a new ID"""
+        new_crew = MyCrew(
+            name=f"{self.name} (Copy)",
+            agents=self.agents.copy(),
+            tasks=self.tasks.copy(),
+            process=self.process,
+            cache=self.cache,
+            max_rpm=self.max_rpm,
+            verbose=self.verbose,
+            manager_llm=self.manager_llm,
+            manager_agent=self.manager_agent,
+            memory=self.memory,
+            planning=self.planning,
+            planning_llm=self.planning_llm,
+            knowledge_source_ids=self.knowledge_source_ids.copy()
+        )
+        ss.crews.append(new_crew)
+        db_utils.save_crew(new_crew)
+        st.toast(f"✅ Crew '{new_crew.name}' duplicated successfully!", icon="✅")
+        return new_crew
+
     def update_name(self):
         self.name = ss[f'name_{self.id}']
         db_utils.save_crew(self)
@@ -265,7 +287,7 @@ class MyCrew:
         
         if self.edit:
             with st.container(border=True):
-                st.text_input("Name (just id, it doesn't affect anything)", value=self.name, key=name_key, on_change=self.update_name)
+                st.text_input("Crew Name", value=self.name, key=name_key, on_change=self.update_name, help="A descriptive name for this crew")
                 st.selectbox("Process", options=[Process.sequential, Process.hierarchical], index=[Process.sequential, Process.hierarchical].index(self.process), key=process_key, on_change=self.update_process)
                 st.multiselect("Agents", options=[agent.role for agent in ss.agents], default=[agent.role for agent in self.agents], key=agents_key, on_change=self.update_agents)                
                 # Filter tasks by selected agents
@@ -300,7 +322,11 @@ class MyCrew:
                 #         on_change=self.update_knowledge_sources
                 #     )
 
-                st.button("Save", on_click=self.set_editable, args=(False,), key=rnd_id())
+                col_save, col_cancel = st.columns(2)
+                with col_save:
+                    st.button("Save", on_click=self.set_editable, args=(False,), key=rnd_id(), type="primary")
+                with col_cancel:
+                    st.button("Cancel", on_click=self.set_editable, args=(False,), key=rnd_id())
         else:
             fix_columns_width()
             expander_title = f"Crew: {self.name}" if self.is_valid() else f"❗ Crew: {self.name}"
@@ -329,10 +355,12 @@ class MyCrew:
                     source_names = [ks.name for ks in ss.knowledge_sources if ks.id in self.knowledge_source_ids]
                     st.markdown(f"**Knowledge Sources:** {', '.join(source_names)}")
                 if buttons:
-                    col1, col2 = st.columns(2)
-                    with col1:                    
+                    col1, col2, col3 = st.columns(3)
+                    with col1:
                         st.button("Edit", on_click=self.set_editable, key=rnd_id(), args=(True,))
-                    with col2:                   
+                    with col2:
+                        st.button("Duplicate", on_click=self.duplicate, key=rnd_id())
+                    with col3:
                         # Instead of direct delete, open modal for cascade delete handling
                         st.button("Delete", on_click=self.request_delete_modal, key=rnd_id())
                 self.is_valid(show_warning=True)

@@ -101,12 +101,25 @@ class PageCrewRun:
             st.write('Placeholders to fill in:')
             for placeholder in placeholders:
                 placeholder_key = f'placeholder_{placeholder}'
+                current_value = ss.placeholders.get(placeholder_key, '')
                 ss.placeholders[placeholder_key] = st.text_area(
-                    label=placeholder,
+                    label=f"{placeholder} {'*' if not current_value else ''}",
                     key=placeholder_key,
-                    value=ss.placeholders.get(placeholder_key, ''),
-                    disabled=ss.running
+                    value=current_value,
+                    disabled=ss.running,
+                    help="Required field" if not current_value else None
                 )
+
+    def are_placeholders_filled(self, crew):
+        """Check if all placeholders for the crew are filled"""
+        placeholders = self.get_placeholders_from_crew(crew)
+        if not placeholders:
+            return True
+        for placeholder in placeholders:
+            placeholder_key = f'placeholder_{placeholder}'
+            if not ss.placeholders.get(placeholder_key, '').strip():
+                return False
+        return True
 
     def draw_crews(self):
         if 'crews' not in ss or not ss.crews:
@@ -140,7 +153,13 @@ class PageCrewRun:
             self.control_buttons(selected_crew)
 
     def control_buttons(self, selected_crew):
-        if st.button('Run crew!', disabled=not selected_crew.is_valid() or ss.running):
+        placeholders_filled = self.are_placeholders_filled(selected_crew)
+        can_run = selected_crew.is_valid() and placeholders_filled and not ss.running
+
+        if not placeholders_filled and selected_crew.is_valid():
+            st.warning("⚠️ Please fill in all required placeholders before running the crew.")
+
+        if st.button('Run crew!', disabled=not can_run, type="primary"):
             inputs = {key.split('_')[1]: value for key, value in ss.placeholders.items()}
             ss.result = None
             
@@ -216,7 +235,7 @@ class PageCrewRun:
         console_container = st.empty()
         
         with console_container.container():
-            with st.expander("Console Output", expanded=False):
+            with st.expander("Console Output", expanded=True):
                 col1, col2 = st.columns([6,1])
                 with col2:
                     if st.button("Clear console"):
