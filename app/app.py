@@ -144,8 +144,6 @@ def draw_sidebar():
                     st.caption(error)
                 if len(validation_errors) > 10:
                     st.caption(f"... and {len(validation_errors) - 10} more")
-        else:
-            st.success("✅ All items valid")
 
         if selected_page_name != ss.page:
             ss.page = selected_page_name
